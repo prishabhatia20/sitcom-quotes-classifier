@@ -14,3 +14,5 @@ Friends Quotes: https://www.kaggle.com/datasets/ryanstonebraker/friends-transcri
 
 
 `pip install keras`
+
+`pip install pygame`
