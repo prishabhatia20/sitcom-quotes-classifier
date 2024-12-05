@@ -7,6 +7,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from constants import NUM_WORDS, MAX_LEN, NUM_CLASSES
+from sklearn.model_selection import train_test_split
 import pickle
 
 def tokenize_and_sequence(train_sentences, test_sentences, num_words=NUM_WORDS, maxlen=MAX_LEN):
@@ -50,11 +51,26 @@ def get_class_weights(labels, num_classes=NUM_CLASSES):
     class_weights = {i: total / (num_classes * class_counts[i]) for i in range(num_classes) if class_counts[i] > 0}
     return class_weights
 
-def split_and_preprocess_data(data, tokenizer=None, train_ratio=0.8, num_words=NUM_WORDS, maxlen=MAX_LEN):
-    from sklearn.model_selection import train_test_split
+def split_and_preprocess_data(data, data_X, data_y, tokenizer=None, train_ratio=0.8, num_words=NUM_WORDS, maxlen=MAX_LEN):
+    # from sklearn.model_selection import train_test_split
+
+    # train_data, test_data = train_test_split(data, train_size=train_ratio, stratify=data['character'])
+    # train_sequences, test_sequences, tokenizer = tokenize_and_sequence(
+    #     train_data['quote'], test_data['quote'], num_words=num_words, maxlen=maxlen
+    # )
+    # return train_sequences, train_data['character'], test_sequences, test_data['character'], tokenizer
+
     
-    train_data, test_data = train_test_split(data, train_size=train_ratio, stratify=data['character'])
-    train_sequences, test_sequences, tokenizer = tokenize_and_sequence(
-        train_data['quote'], test_data['quote'], num_words=num_words, maxlen=maxlen
-    )
-    return train_sequences, train_data['character'], test_sequences, test_data['character'], tokenizer
+    X_train, X_test, y_train, y_test = train_test_split(data_X, data_y, train_size=train_ratio, stratify=data['character'])
+    return X_train, X_test, y_train, y_test
+
+def split_game_data(data, game_size=30):
+    """
+    Split the dataset into unseen quotes to be used in the game and data to be used to
+    train and test the model
+    """
+    # from sklearn.model_selection import train_test_split
+
+    game_data, training_data = train_test_split(data, train_size=game_size)
+
+    return game_data, training_data
