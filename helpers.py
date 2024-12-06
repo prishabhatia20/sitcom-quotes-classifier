@@ -74,3 +74,10 @@ def split_game_data(data, game_size=30):
     game_data, training_data = train_test_split(data, train_size=game_size)
 
     return game_data, training_data
+
+
+def clean_character_names(row, typos_dict):
+    for correct_name, typo_list in typos_dict.items():
+        if row in typo_list:
+            return correct_name
+    return row

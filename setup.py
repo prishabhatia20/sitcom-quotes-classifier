@@ -21,14 +21,14 @@ office_response.drop(['parent_id', 'parent'], axis=1, inplace=True)
 office_response.rename(columns={'reply': 'quote'}, inplace=True)
 office_data = pd.concat([office_monologue, office_response]).reset_index(drop=True)
 
-char_to_int = {
+office_char_to_int = {
         "Michael": 0,
         "Dwight": 1,
         "Jim": 2,
         "Pam": 3
         }
-int_to_char = ["Michael", "Dwight", "Jim", "Pam"]
-office_data['character'] = office_data['character'].replace(char_to_int).astype('int8')
+office_int_to_char = ["Michael", "Dwight", "Jim", "Pam"]
+office_data['character'] = office_data['character'].replace(office_char_to_int).astype('int8')
 
 
 # Loading Friends dataset
@@ -37,7 +37,7 @@ friends_data = pd.read_csv("datasets/friends_quotes.csv.zip", compression='zip')
 friends_data.drop(['episode_number', 'episode_title', 'quote_order', 'season'], axis=1, inplace=True)
 friends_data.rename(columns={'author': 'character'}, inplace=True)
 
-char_to_int = {
+friends_char_to_int = {
     "Rachel": 0,
     "Phoebe": 1,
     "Monica": 2,
@@ -46,30 +46,81 @@ char_to_int = {
     "Ross": 5
 }
 
-int_to_char = ["Rachel", "Phoebe", "Monica", "Joey", "Chandler", "Ross"]
-friends_data = friends_data[friends_data['character'].isin(int_to_char)]
-friends_data['character'] = friends_data['character'].replace(char_to_int).astype('int8')
+friends_int_to_char = ["Rachel", "Phoebe", "Monica", "Joey", "Chandler", "Ross"]
+friends_data = friends_data[friends_data['character'].isin(friends_int_to_char)]
+friends_data['character'] = friends_data['character'].replace(friends_char_to_int).astype('int8')
 
 # Loading Brooklyn 99 data
 
 brooklyn_data = pd.read_csv("datasets/Brooklyn99_Season1-4_Dataset.csv")
 brooklyn_data.rename(columns={'name': 'character', 'line': 'quote'}, inplace=True)
+brooklyn_data['character'] = brooklyn_data['character'].str.title().str.strip()
 
-show = "The Office"
-data = None
+# Identify rows where multiple characters are mentioned
+multi_character_rows = brooklyn_data[brooklyn_data['character'].str.contains(" AND ")]
 
-match show:
-    case "The Office":
-        data = office_data
+# Split rows with multiple characters
+split_rows = multi_character_rows['character'].str.split(" AND ", expand=True)
 
-    case "Friends":
-        data = friends_data
+
+# Create a new DataFrame with split rows
+split_data = pd.DataFrame({
+    'character': split_rows.stack(),
+    'quote': multi_character_rows['quote'].repeat(split_rows.shape[1]).values
+})
+
+# Remove the old rows with "AND" and append the new rows
+brooklyn_data = pd.concat([
+    brooklyn_data[~brooklyn_data['character'].str.contains(" And ")],
+    split_data
+], ignore_index=True)
+
+typos = {"Charles": ["Boyle", "Kid Charles", "Charles On The Pole"],
+         "Holt": ["Captain Holt", "Young Holt"],
+         "Amy": ["Santiago", "Any"],
+         "Jake": ["Peralta", "Jakes", "Jaek", "Young Jake", "Kake", "Jakw",
+                  "Peralta Breaks The Glass Of The Interrogation Room Jake",
+                  "Jake Laying On The Floor",
+                  "Jake Leaves",
+                  "Jake Sighs",
+                  "Jake Chasing The Birds With A Bag",
+                  "Jake Snaps His Fingers", "Jake Going Down The Pole",
+                  "Jake Walks Into The Bullpen", "Jake Tries Them On",
+                  "Jake Reads The Shirt", "Jake With A Guitar",
+                  "Jake Walks In The Briefing Room Handing Terry The Guitar"],
+         "Rosa": ["Diaz", "Rosa Walks In With A Vic Wearing A Nun Costume",
+                  "Rosa On The Stand"],
+         "Terry": ["Terey", "Sarge", "Teery"],
+         "Hitchcock": ["Hitchock"],
+         "Gina": ["Gina Moves The Gun To Scratch Her Nose", "Gina Flossing Her Teeth Says"], 
+         "Scully": ["Scully Panicked"]}
+
+brooklyn_data['character'] = brooklyn_data['character'].apply(lambda x: helpers.clean_character_names(x, typos))
+
+brooklyn_int_to_char = ["Jake", "Rosa", "Gina", "Amy", "Holt", "Charles", "Scully", "Hitchcock", "Terry"]
+
+brooklyn_data = brooklyn_data[brooklyn_data['character'].isin(brooklyn_int_to_char)]
+
+brooklyn_char_to_int = {"Jake": 0, "Rosa": 1, "Gina": 2, "Amy": 3, "Holt": 4, "Charles": 4, "Scully": 5, "Hitchcock": 6, "Terry": 7}
+brooklyn_data['character'] = brooklyn_data['character'].replace(brooklyn_char_to_int).astype('int8')
+
+# print(brooklyn_data['character'].unique())
+
+# show = "The Office"
+# data = None
+
+# match show:
+#     case "The Office":
+#         data = office_data
+
+#     case "Friends":
+#         data = friends_data
     
-    case "Brooklyn 99":
-        data = brooklyn_data
+#     case "Brooklyn 99":
+#         data = brooklyn_data
     
-    case _:
-        print("Invalid input")
+#     case _:
+#         print("Invalid input")
 
 
 # Split and train The Office 
