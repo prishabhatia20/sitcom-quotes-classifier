@@ -10,3 +10,8 @@ main_screen = pygame.image.load(
 
 screen = pygame.display.set_mode((HEIGHT, WIDTH))
 clock = pygame.time.Clock()
+
+class Model():
+    def __init__():
+        pass
+
