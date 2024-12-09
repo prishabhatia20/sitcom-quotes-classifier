@@ -1,9 +1,9 @@
 import pygame
 import os
+from constants import FRAME_WIDTH, FRAME_HEIGHT
 
-# Constants for screen dimensions
-FRAME_WIDTH = 1370
-FRAME_HEIGHT = 1250
+DEFAULT_IMAGE_SIZE = (500, 250)
+
 
 pygame.init()
 screen = pygame.display.set_mode((FRAME_WIDTH, FRAME_HEIGHT))
@@ -30,22 +30,41 @@ class View:
         self.world = pygame.display.set_mode([self.frame_width, self.frame_height])
 
         # Load the main screen image
-        self.background = pygame.image.load(
-            os.path.join("images", "background.png")
+        self.background = self.background = pygame.image.load(
+            os.path.join("images", "main_background.png")
         ).convert()
+        self.background = pygame.transform.scale(self.background, (self.frame_width, self.frame_height))
+
+        self.empty_background = pygame.image.load(
+            os.path.join("images", "empty_background.png")
+        ).convert()
+        self.empty_background = pygame.transform.scale(self.empty_background, (self.frame_width, self.frame_height))
 
         # Load show logos
         self.office_logo = pygame.image.load(
             os.path.join("images", "the_office_logo.png")
         ).convert()
 
+        self.office_logo.convert_alpha()
+        self.office_logo.set_colorkey((255, 255, 255))
+        self.office_logo = pygame.transform.scale(self.office_logo, DEFAULT_IMAGE_SIZE)
+
         self.friends_logo = pygame.image.load(
             os.path.join("images", "friends_logo.png")
         ).convert()
+        self.friends_logo.convert_alpha()
+        self.friends_logo.set_colorkey((255, 255, 255))
+
+        self.friends_logo = pygame.transform.scale(self.friends_logo, DEFAULT_IMAGE_SIZE)
+
 
         self.brooklyn_logo = pygame.image.load(
-            os.path.join("images", "brooklyn_nine-nine_logo.png")
+            os.path.join("images", "brooklyn_logo.png")
         ).convert()
+        self.brooklyn_logo.convert_alpha()
+        self.brooklyn_logo.set_colorkey((255, 255, 255))
+
+        self.brooklyn_logo = pygame.transform.scale(self.brooklyn_logo, DEFAULT_IMAGE_SIZE)
 
         # Fonts
         self.font = pygame.font.Font(None, 50)
@@ -57,13 +76,11 @@ class View:
         self.world.blit(self.background, (0, 0))
 
         # Draw logos for show selection
-        self.world.blit(self.office_logo, (100, 100))
-        self.world.blit(self.friends_logo, (500, 100))
-        self.world.blit(self.brooklyn_logo, (900, 100))
+        self.world.blit(self.office_logo, (100, 300))
+        self.world.blit(self.friends_logo, (500, 700))
+        self.world.blit(self.brooklyn_logo, (900, 275))
 
-        # Title
-        title_text = self.font.render("Select a Show to Start the Trivia", True, (255, 255, 255))
-        self.world.blit(title_text, (FRAME_WIDTH // 2 - title_text.get_width() // 2, 50))
+
 
         pygame.display.flip()
 
@@ -71,7 +88,7 @@ class View:
         """
         Draw the screen for displaying a question and input.
         """
-        self.world.fill((0, 0, 0))
+        self.world.blit(self.empty_background, (0, 0))
 
         # Quote
         quote_text = self.font.render(f"Quote: {quote}", True, (255, 255, 255))
@@ -99,14 +116,19 @@ class Controller:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
+                
                 # Handle show selection
                 x, y = event.pos
-                if 100 < x < 300 and 100 < y < 300:  # Office logo bounds
+                # Office logo bounds
+                if 100 <= x <= 100 + DEFAULT_IMAGE_SIZE[0] and 300 <= y <= 300 + DEFAULT_IMAGE_SIZE[1]:
                     self.model.selected_show = "The Office"
-                elif 500 < x < 700 and 100 < y < 300:  # Friends logo bounds
+                # Friends logo bounds
+                elif 500 <= x <= 500 + DEFAULT_IMAGE_SIZE[0] and 700 <= y <= 700 + DEFAULT_IMAGE_SIZE[1]:
                     self.model.selected_show = "Friends"
-                elif 900 < x < 1100 and 100 < y < 300:  # Brooklyn logo bounds
+                # Brooklyn logo bounds
+                elif 900 <= x <= 900 + DEFAULT_IMAGE_SIZE[0] and 275 <= y <= 275 + DEFAULT_IMAGE_SIZE[1]:
                     self.model.selected_show = "Brooklyn 99"
+                print(f"You selected the show {self.model.selected_show}")    
 
     def run_game(self):
         """
