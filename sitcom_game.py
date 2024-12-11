@@ -29,6 +29,7 @@ class GameModel:
         self.correct_answer = None
         self.model_correct_answer = None
         self.model_score = ""
+        self.classifier = None
     
     def get_dataset(self, data):
         """
@@ -41,6 +42,9 @@ class GameModel:
         """
         self.data = data
         self.characters = self.data['character'].unique() 
+    
+    def get_classifier(self, classifier):
+        self.classifier = classifier
     
     def pick_quotes(self):
         """

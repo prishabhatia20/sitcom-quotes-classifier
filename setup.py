@@ -256,16 +256,21 @@ while True:
     view.draw_main_screen()
     show = controller.handle_main_screen_click()
     data = None
+    classifier = None
     if show == "The Office":
         data = office_data_game
+        classifier = office_model
     elif show == "Friends":
         data = friends_data_game
+        classifier = friends_model
     elif show == "Brooklyn 99":
         data = brooklyn_data_game
+        classifier = brooklyn_model
     else:
         print("Please enter a valid show")
     
     model.get_dataset(data)
+    model.get_classifier(classifier)
     model.pick_quotes
 
 
