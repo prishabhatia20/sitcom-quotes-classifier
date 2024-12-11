@@ -254,13 +254,27 @@ while True:
     controller = GameController(model)
 
     view.draw_main_screen()
-    controller.handle_main_screen_click()
+    show = controller.handle_main_screen_click()
+    data = None
+    if show == "The Office":
+        data = office_data_game
+    elif show == "Friends":
+        data = friends_data_game
+    elif show == "Brooklyn 99":
+        data = brooklyn_data_game
+    else:
+        print("Please enter a valid show")
+    
+    model.get_dataset(data)
+    model.pick_quotes
+
 
     while model.active:
         model.get_quote()
         model.get_model_result()
         view.draw_question_screen()
         pygame.time.wait(10000)
+        view.draw_result_screen()
         model.update_active()
     
     view.draw_results_screen()

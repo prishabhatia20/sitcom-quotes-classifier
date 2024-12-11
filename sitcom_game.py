@@ -10,6 +10,9 @@ screen = pygame.display.set_mode((FRAME_WIDTH, FRAME_HEIGHT))
 clock = pygame.time.Clock()
 
 class GameModel:
+    """
+    A class containing the game's model, following the MVC format
+    """
     total_questions = 7
 
     def __init__(self):
@@ -40,15 +43,22 @@ class GameModel:
         self.characters = self.data['character'].unique() 
     
     def pick_quotes(self):
+        """
+        From the given dataset, pick 7 quotes to test the user on
+        """
         rows, _ = self.data.shape
         for _ in range(self.total_questions):
             self.quote_indices.append(random.randint(0, rows))
         
     def get_quote(self):
+        """
+        Access a specified row of data and set the current quote and answer to the
+        values in that row
+        """
         self.model.questions_shown += 1
         
         
-        row = self.data.iloc[self.model.questions_shown]
+        row = self.data.iloc[self.quote_indices[self.model.questions_shown]]
         character = row['character']
         quote = row['quote']
 
@@ -56,12 +66,21 @@ class GameModel:
         self.current_answer = character
     
     def get_model_result(self):
+        """
+        Pass a quote into the mdoel and get its prediction
+        """
         pass 
 
     def update_score(self):
+        """
+        Update the user's score
+        """
         self.score += 1
     
     def update_active(self):
+        """
+        Update whether the game is active or not (whether there are questions left)
+        """
         if self.questions_shown == self.total_questions:
             self.active = False
 
@@ -76,6 +95,9 @@ class GameModel:
             self.correct_answer = False
     
     def determine_winner(self):
+        """
+        Compare scores and determine whether the model or the user wins
+        """
         if self.model_score > self.score:
             return "model"
         elif self.model.score < self.score:
@@ -86,7 +108,13 @@ class GameModel:
     
 
 class GameView:
+    """
+    A class containing the game view, following the MVC format
+    """
     def __init__(self, model):
+        """
+        Initialize the model and load all necessary images
+        """
         self.model = model
         self.frame_width = FRAME_WIDTH
         self.frame_height = FRAME_HEIGHT
@@ -126,18 +154,21 @@ class GameView:
 
 
 
-
-
         # Load show logos
         self.office_logo = self.load_and_transform_image("the_office_logo.png")
         self.friends_logo = self.load_and_transform_image("friends_logo.png")
         self.brooklyn_logo = self.load_and_transform_image("brooklyn_logo.png")
 
         self.font = pygame.font.Font(None, 50)
+
+        self.images = {}
     
     def load_and_transform_image(self, filename):
         """
         Load an image, convert it, and apply transparency settings
+
+        Args:
+            filename: a String containing the name of the image to load
         """
 
         image = pygame.image.load(os.path.join("images", filename)).convert()
@@ -145,7 +176,7 @@ class GameView:
 
         return pygame.transform.scale(image, DEFAULT_IMAGE_SIZE)
 
-    def load_character_images(self, folder, characters):
+    def load_character_images(self, folder):
         """
         Given a folder and character list, load and process character head images
 
@@ -157,9 +188,8 @@ class GameView:
         Returns:
             images: a dict where the character name maps to their loaded in image
         """
-        images = {}
 
-        for character in characters:
+        for character in self.model.characters:
             character = character.lower()
             image = pygame.image.load(
                 os.path.join("images", folder, character + ".png")
@@ -167,10 +197,8 @@ class GameView:
 
             image.set_colorkey((255, 255, 255))
             image = pygame.transform.scale(image, DEFAULT_HEAD_SIZE)
-            images[character.title()] = image
+            self.images[character.title()] = image
         
-        return images
-
     def draw_main_screen(self):
         """
         Draw the main screen with the show selection logos
@@ -208,7 +236,50 @@ class GameView:
 
         pygame.display.flip()
     
+    def draw_characters(self):
+        """
+        Randomly pick three other characters and draw the random characters + the
+        answer character on the screen
+        """
+        answer_pos = None
+
+        # Create a copy of the characters list
+        temp_characters_list = self.model.characters.copy()
+
+        # Remove the correct character from the list & randomly select 3
+        # characters as other options
+        temp_characters_list.remove(self.model.current_answer)
+        other_characters = random.choices(list, k=3)
+
+        # Append the current answer to the temp list & shuffle the order
+        other_characters.append(self.model.current_answer)
+        random.shuffle(other_characters)
+
+        # Create a dictionary with characters and their positions 
+        characters_dict = {
+            other_characters[0]: (200, 200),
+            other_characters[1]: (900, 200),
+            other_characters[2]: (900, 600),
+            other_characters[3]: (200, 600),
+        }
+
+        for character in other_characters:
+            image = self.images.get(character.lower())
+            self.world.blit(image, characters_dict[character])
+
+        for character, position in characters_dict.items():
+            if self.model.current_answer == character:
+                answer_pos = position
+        
+        pygame.display.flip()
+        return answer_pos
+
+
+    
     def draw_result_screen(self):
+        """
+        Draw the screen showing whether the answer was correct or not
+        """
         self.world.blit(self.empty_background, (0, 0))
 
         # quote_text = self.font.render(f"Quote: {self.model.current_quote}", True, (255, 255, 255))
@@ -246,10 +317,22 @@ class GameView:
             
 
     def render_text(self, text, position, color=(255, 255, 255)):
+        """
+        Render any text on the screen
+
+        Args:
+            text: a String that is the text to be rendered
+            position: a tuple representing where the text should be rendered
+            color: a tuple determining the text's color (defaults to white)
+        """
         rendered_text = self.font.render(text, True, color)
         self.world.blit(rendered_text, position)
 
     def draw_final_screen(self):
+        """
+        Draw the final screen showing whether the user won, the model won, or there was
+        a tie
+        """
         result = self.model.determine_winner()
         if result == "model":
             self.world.blit(self.lose_image, (0, 0))
@@ -266,10 +349,19 @@ class GameView:
 
 
 class GameController:
+    """
+    A class containing the game controller, following the MVC format
+    """
     def __init__(self, model):
+        """
+        Initialize the model
+        """
         self.model = model
 
     def handle_main_screen_click(self):
+        """
+        Handle the event when the user selects which show they want to play
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.model.active = False
@@ -288,8 +380,12 @@ class GameController:
                 elif 900 <= x <= 900 + DEFAULT_IMAGE_SIZE[0] and 275 <= y <= 275 + DEFAULT_IMAGE_SIZE[1]:
                     self.model.selected_show = "Brooklyn 99"
                 print(f"You selected the show {self.model.selected_show}")
+                return self.model.selected_show
 
     def handle_answer_click(self, answer_pos):
+        """
+        Handle the event where the user selects their answer
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.model.active = False
