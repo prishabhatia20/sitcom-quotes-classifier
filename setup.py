@@ -7,9 +7,11 @@ from sklearn.metrics import  accuracy_score, confusion_matrix
 
 import seaborn as sns
 from matplotlib import pyplot as plt
+import pygame
+from sitcom_game import GameModel, GameView, GameController
 
 # Whether the model for The Office, Friends, and Brooklyn 99 has been trained 
-model_trained = [False, False, False]
+# model_trained = [False, False, False]
 
 
 # Loading The Office dataset
@@ -242,4 +244,27 @@ print(f"Brooklyn 99 Accuracy: {brooklyn_accuracy:%}")
 plt.figure(figsize=(6, 6))
 sns.heatmap(brooklyn_cm, annot=True, fmt="d", cbar=False)
 plt.show()
+
+
+while True:
+    pygame.init()
+
+    model = GameModel()
+    view = GameView(model)
+    controller = GameController(model)
+
+    view.draw_main_screen()
+    controller.handle_main_screen_click()
+
+    while model.active:
+        model.get_quote()
+        model.get_model_result()
+        view.draw_question_screen()
+        pygame.time.wait(10000)
+        model.update_active()
+    
+    view.draw_results_screen()
+    pygame.time.wait(5000)
+
+
 
