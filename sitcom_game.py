@@ -114,26 +114,76 @@ class GameModel:
         """
         Given which character the user clicks on, 
         """
-        print("------------beginnging of function-----------------")
+        # print("------------beginnging of function-----------------")
         # if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
         #     self.update_score()
         #     self.correct_answer = True
         # else:
         #     self.correct_answer = False
-        if self.correct_answer:
+        # if self.correct_answer:
+        #     self.update_score()
+        
+        
+        # self.get_model_results()
+        # self.model_answer.lower()
+        # print(f"------------------Model answer: {self.model_answer}---------------------")
+        # if self.model_answer == self.correct_answer:
+        #     self.update_model_score()
+        #     self.model_correct_answer = True
+        # else:
+        #     self.model_correct_answer = False
+        
+        # print("-------------end of function------------------------")
+
+        """
+        Handles user input to determine whether the selected character is correct.
+        
+        Args:
+            x (int): X-coordinate of the mouse click.
+            y (int): Y-coordinate of the mouse click.
+            answer_pos (tuple): The position of the correct answer (top-left corner of the image).
+        """
+        print("------------ Beginning of check_answer function -----------------")
+
+        # Ensure `answer_pos` is valid
+        if answer_pos is None:
+            print("Error: `answer_pos` is None. Cannot determine if answer is correct.")
+            self.correct_answer = False
+            return
+
+        if not hasattr(self, "DEFAULT_HEAD_SIZE"):
+            print("Error: `DEFAULT_HEAD_SIZE` is not defined.")
+            self.correct_answer = False
+            return
+
+        # Check if the user clicked within the bounds of the correct character
+        if (
+            answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and
+            answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]
+        ):
+            print("User clicked on the correct character.")
+            self.correct_answer = True
             self.update_score()
-        
-        
-        self.get_model_results()
-        self.model_answer.lower()
-        print(f"------------------Model answer: {self.model_answer}---------------------")
-        if self.model_answer == self.correct_answer:
+        else:
+            print(f"User clicked at ({x}, {y}), which is not within the bounds of the correct character at {answer_pos}.")
+            self.correct_answer = False
+
+        # Model answer comparison (case-insensitive)
+        self.model_answer = self.model_answer.lower()
+        self.current_answer = self.current_answer.lower()
+
+        print(f"Model's answer: {self.model_answer}, Correct answer: {self.current_answer}")
+
+        if self.model_answer == self.current_answer:
+            print("Model correctly identified the answer.")
             self.update_model_score()
             self.model_correct_answer = True
         else:
+            print("Model failed to identify the correct answer.")
             self.model_correct_answer = False
-        
-        print("-------------end of function------------------------")
+
+        print("------------- End of check_answer function ------------------------")
+
     
     def determine_winner(self):
         """
@@ -271,15 +321,6 @@ class GameView:
         # Quote
         self.render_text(f"Quote: {self.model.current_quote}", (50, 150))
 
-        # quote_text = self.font.render(f"Quote: {self.model.current_quote}", True, (255, 255, 255))
-        # self.world.blit(quote_text, (50, 150))
-
-        # Score and question count
-        # score_text = self.font.render(f"Score: {self.model.score}", True, (255, 255, 255))
-        # question_text = self.font.render(f"Question: {self.model.questions_shown}/7", True, (255, 255, 255))
-        # self.world.blit(score_text, (50, 50))
-        # self.world.blit(question_text, (FRAME_WIDTH - 300, 50))
-
         self.render_text(f"Score: {self.model.score}", (50, 50))
         self.render_text(f"Question: {self.model.questions_shown}/7", (FRAME_WIDTH - 300, 50))
 
@@ -343,27 +384,15 @@ class GameView:
         """
         self.world.blit(self.empty_background, (0, 0))
 
-        # quote_text = self.font.render(f"Quote: {self.model.current_quote}", True, (255, 255, 255))
-        # self.world.blit(quote_text, (50, 150))
 
         self.render_text(f"Quote: {self.model.current_quote}", (50, 150))
 
-        # model_text = self.font.render("Model's Guess:", True, (255, 255, 255))
-        # self.world.blit(model_text, (50, 200))
         self.render_text("Model's Guess:", (50, 200))
-
-        # user_text = self.font.render("Your Guess:", True, (255, 255, 255))
-        # self.world.blit(user_text, (FRAME_WIDTH - 300, 200))
 
         self.render_text("Your Guess:", (FRAME_WIDTH - 300, 200))
 
-        # user_score_text = self.font.render(f"Your Score: {self.model.score}/7", True, (255, 255, 255))
-        # self.world.blit(user_score_text, (FRAME_WIDTH - 300, 250))
         self.render_text(f"Your Score: {self.model.score}/7", (FRAME_WIDTH - 300, 250))
         self.render_text(f"Model's Score: {self.model.model_score}/7", (50, 250))
-        
-        # model_score_text = self.font.render(f"Model's Score: {self.model.model_score}/7", True, (255, 255, 255))
-        # self.world.blit(model_score_text, (50, 250))
 
         if self.model.correct_answer:
             self.render_text("Correct!", (FRAME_WIDTH - 400, 700), color=(193, 225, 193))
@@ -448,26 +477,31 @@ class GameController:
         """
         Handle the event where the user selects their answer
         """
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.model.active = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = event.pos
-                self.model.check_answer(x, y, answer_pos)
-                # if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
-                #     self.model.correct_answer = True
-                #     self.model.check_answer()
-    
-    def handle_waiting(self, answer_pos):
         waiting_for_click = True
         while waiting_for_click:
-            # Handle events like quitting the game
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.model.active = False
-                    waiting_for_click = False  # Exit the loop if the user quits
-
+                    waiting_for_click = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # If the user clicks, handle the click and stop waiting
-                    self.handle_answer_click(answer_pos)
-                    waiting_for_click = False  # Exit the loop after the click
+                    x, y = event.pos
+                    self.model.check_answer(x, y, answer_pos)
+                    waiting_for_click = False
+                    # if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
+                    #     self.model.correct_answer = True
+                    #     self.model.check_answer()
+    
+    # def handle_waiting(self, answer_pos):
+    #     waiting_for_click = True
+    #     while waiting_for_click:
+    #         # Handle events like quitting the game
+    #         for event in pygame.event.get():
+    #             if event.type == pygame.QUIT:
+    #                 self.model.active = False
+    #                 waiting_for_click = False  # Exit the loop if the user quits
+
+    #             elif event.type == pygame.MOUSEBUTTONDOWN:
+    #                 x, y = event.pos
+    #                 # If the user clicks, handle the click and stop waiting
+    #                 self.handle_answer_click(x, y)
+    #                 waiting_for_click = False  # Exit the loop after the click

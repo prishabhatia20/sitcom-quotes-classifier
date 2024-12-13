@@ -149,7 +149,7 @@ while True:
         model.get_model_results()
         view.draw_question_screen()
         answer_pos = view.draw_characters()
-        controller.handle_waiting(answer_pos)
+        controller.handle_answer_click(answer_pos)
         view.draw_result_screen()
         pygame.time.wait(3000)
         model.update_active()
