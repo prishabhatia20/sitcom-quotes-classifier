@@ -294,6 +294,9 @@ class GameView:
 
         # Append the current answer to the list & shuffle
         other_characters.append(self.model.current_answer)
+        other_characters = [character.lower() for character in other_characters]
+        print(f"Correct Answer: {self.model.current_answer}, Characters: {other_characters}")
+        print(self.images)
         random.shuffle(other_characters)
 
         # Assign positions to the characters
@@ -414,18 +417,19 @@ class GameController:
                 self.model.active = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
+                # selected_show = ""
 
                 # Office logo bounds
                 if 100 <= x <= 100 + DEFAULT_IMAGE_SIZE[0] and 300 <= y <= 300 + DEFAULT_IMAGE_SIZE[1]:
-                    self.model.selected_show = "The Office"                
+                    return "the-office"                
                 # Friends logo bounds
                 elif 500 <= x <= 500 + DEFAULT_IMAGE_SIZE[0] and 700 <= y <= 700 + DEFAULT_IMAGE_SIZE[1]:
-                    self.model.selected_show = "Friends"                
+                    return "friends"                
                 # Brooklyn 99 logo bounds
                 elif 900 <= x <= 900 + DEFAULT_IMAGE_SIZE[0] and 275 <= y <= 275 + DEFAULT_IMAGE_SIZE[1]:
-                    self.model.selected_show = "Brooklyn 99"
-                print(f"You selected the show {self.model.selected_show}")
-                return self.model.selected_show
+                    return "brooklyn-99"
+                # print(f"You selected the show {self.modelselected_show}")
+                # return self.model.selected_show
 
     def handle_answer_click(self, answer_pos):
         """

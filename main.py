@@ -123,15 +123,15 @@ while True:
     data = None
     classifier = None
     vectorizer = None
-    if show == "The Office":
+    if show == "the-office":
         data = office_data_game
         classifier = office_model
         vectorizer = office_vectorizer
-    elif show == "Friends":
+    elif show == "friends":
         data = friends_data_game
         classifier = friends_model
         vectorizer = friends_vectorizer
-    elif show == "Brooklyn 99":
+    elif show == "brooklyn-99":
         data = brooklyn_data_game
         classifier = brooklyn_model
         vectorizer = brooklyn_vectorizer
@@ -146,10 +146,7 @@ while True:
         model.get_dataset(data)
         model.get_classifier(classifier, vectorizer)
         model.pick_quotes()
-
-
-
-
+        view.load_character_images(show)
     while model.active:
         model.get_quote()
         model.get_model_results()
