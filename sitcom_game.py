@@ -1,4 +1,8 @@
 import pygame
+import re
+import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
 import os
 import random
 from constants import FRAME_WIDTH, FRAME_HEIGHT
@@ -30,6 +34,8 @@ class GameModel:
         self.model_correct_answer = None
         self.model_score = ""
         self.classifier = None
+        self.vectorizer = None
+        self.predictions = []
     
     def get_dataset(self, data):
         """
@@ -40,11 +46,15 @@ class GameModel:
             data: a Pandas dataframe with quotes and their corresponding
             characters
         """
+        if data is None or not isinstance(data, pd.DataFrame):
+            raise ValueError("Invalid dataset provided. Please pass a valid Pandas DataFrame.")
+    
         self.data = data
         self.characters = self.data['character'].unique() 
     
-    def get_classifier(self, classifier):
+    def get_classifier(self, classifier, vectorizer):
         self.classifier = classifier
+        self.vectorizer = vectorizer
     
     def pick_quotes(self):
         """
@@ -59,21 +69,30 @@ class GameModel:
         Access a specified row of data and set the current quote and answer to the
         values in that row
         """
-        self.model.questions_shown += 1
-        
-        
-        row = self.data.iloc[self.quote_indices[self.model.questions_shown]]
+                
+        row = self.data.iloc[self.quote_indices[self.questions_shown]]
         character = row['character']
         quote = row['quote']
 
-        self.current_quote = quote
+        first_sentence = re.split(r'[.!?]', quote)[0].strip()
+
+        self.current_quote = first_sentence
         self.current_answer = character
+        self.questions_shown += 1
     
-    def get_model_result(self):
+    def get_model_results(self):
         """
         Pass a quote into the mdoel and get its prediction
         """
-        pass 
+        quote = [self.current_quote]
+        quote_vectorized = self.vectorizer.transform(quote)
+        prediction = self.classifier.predict(quote_vectorized)
+        if isinstance(prediction, np.ndarray):  # If it's a NumPy array
+            prediction = [p.lower() for p in prediction]
+        elif isinstance(prediction, str):  # If it's a single string (unlikely for predict)
+            prediction = prediction.lower()
+        self.model_answer = prediction
+
 
     def update_score(self):
         """
@@ -88,6 +107,9 @@ class GameModel:
         if self.questions_shown == self.total_questions:
             self.active = False
 
+    def update_model_score(self):
+        self.model_score += 1
+
     def check_answer(self, answer_pos, x, y):
         """
         Given which character the user clicks on, 
@@ -97,6 +119,12 @@ class GameModel:
             self.correct_answer = True
         else:
             self.correct_answer = False
+        
+        if self.model_answer == self.correct_answer:
+            self.update_model_score()
+            self.model_correct_answer = True
+        else:
+            self.model_correct_answer = False
     
     def determine_winner(self):
         """
@@ -130,7 +158,7 @@ class GameView:
         self.start_background = pygame.image.load(
             os.path.join("images", "main_background.png")
         ).convert()
-        self.start_background = pygame.transform.scale(self.background, (self.frame_width, self.frame_height))
+        self.start_background = pygame.transform.scale(self.start_background, (self.frame_width, self.frame_height))
 
         # Load the main background image
         self.empty_background = pygame.image.load(
@@ -194,21 +222,29 @@ class GameView:
         """
 
         for character in self.model.characters:
-            character = character.lower()
-            image = pygame.image.load(
-                os.path.join("images", folder, character + ".png")
-            ).convert()
+            character_lower = character.lower()
+            file_path = os.path.join("images", folder, character_lower + ".png")
+            
+            if not os.path.exists(file_path):
+                print(f"Image file not found for {character}: {file_path}")
+                continue
 
-            image.set_colorkey((255, 255, 255))
-            image = pygame.transform.scale(image, DEFAULT_HEAD_SIZE)
-            self.images[character.title()] = image
+            try:
+                image = pygame.image.load(file_path).convert()
+                image.set_colorkey((255, 255, 255))
+                image = pygame.transform.scale(image, DEFAULT_HEAD_SIZE)
+                # Store using `character_lower` as key
+                self.images[character_lower] = image
+                print(f"Loaded image for {character} from {file_path}")
+            except Exception as e:
+                print(f"Error loading image for {character}: {e}")
         
     def draw_main_screen(self):
         """
         Draw the main screen with the show selection logos
         """ 
 
-        self.world.blit(self.background, (0, 0))
+        self.world.blit(self.start_background, (0, 0))
 
         # Draw logos for show selection
         self.world.blit(self.office_logo, (100, 300))
@@ -248,18 +284,19 @@ class GameView:
         answer_pos = None
 
         # Create a copy of the characters list
-        temp_characters_list = self.model.characters.copy()
+        temp_characters_list = list(self.model.characters)
 
-        # Remove the correct character from the list & randomly select 3
-        # characters as other options
+        # Remove the correct character from the list & randomly select 3 others
         temp_characters_list.remove(self.model.current_answer)
-        other_characters = random.choices(list, k=3)
+        print(f"{self.model.characters}")
+        print(f"Temp characters list: {temp_characters_list}")
+        other_characters = random.sample(temp_characters_list, 3)
 
-        # Append the current answer to the temp list & shuffle the order
+        # Append the current answer to the list & shuffle
         other_characters.append(self.model.current_answer)
         random.shuffle(other_characters)
 
-        # Create a dictionary with characters and their positions 
+        # Assign positions to the characters
         characters_dict = {
             other_characters[0]: (200, 200),
             other_characters[1]: (900, 200),
@@ -268,16 +305,22 @@ class GameView:
         }
 
         for character in other_characters:
-            image = self.images.get(character.lower())
+            character_lower = character.lower()
+            image = self.images.get(character_lower)
+
+            if image is None:
+                print(f"Image for {character} not found in self.images.")
+                continue
+
             self.world.blit(image, characters_dict[character])
 
+        # Locate the position of the correct answer
         for character, position in characters_dict.items():
             if self.model.current_answer == character:
                 answer_pos = position
-        
+
         pygame.display.flip()
         return answer_pos
-
 
     
     def draw_result_screen(self):
@@ -374,12 +417,10 @@ class GameController:
 
                 # Office logo bounds
                 if 100 <= x <= 100 + DEFAULT_IMAGE_SIZE[0] and 300 <= y <= 300 + DEFAULT_IMAGE_SIZE[1]:
-                    self.model.selected_show = "The Office"
-                
+                    self.model.selected_show = "The Office"                
                 # Friends logo bounds
                 elif 500 <= x <= 500 + DEFAULT_IMAGE_SIZE[0] and 700 <= y <= 700 + DEFAULT_IMAGE_SIZE[1]:
-                    self.model.selected_show = "Friends"
-                
+                    self.model.selected_show = "Friends"                
                 # Brooklyn 99 logo bounds
                 elif 900 <= x <= 900 + DEFAULT_IMAGE_SIZE[0] and 275 <= y <= 275 + DEFAULT_IMAGE_SIZE[1]:
                     self.model.selected_show = "Brooklyn 99"
