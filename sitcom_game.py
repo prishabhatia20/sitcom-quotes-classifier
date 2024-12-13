@@ -32,7 +32,7 @@ class GameModel:
         self.model_answer = ""
         self.correct_answer = None
         self.model_correct_answer = None
-        self.model_score = ""
+        self.model_score = 0
         self.classifier = None
         self.vectorizer = None
         self.predictions = []
@@ -110,21 +110,30 @@ class GameModel:
     def update_model_score(self):
         self.model_score += 1
 
-    def check_answer(self, answer_pos, x, y):
+    def check_answer(self, x, y, answer_pos):
         """
         Given which character the user clicks on, 
         """
-        if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
+        print("------------beginnging of function-----------------")
+        # if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
+        #     self.update_score()
+        #     self.correct_answer = True
+        # else:
+        #     self.correct_answer = False
+        if self.correct_answer:
             self.update_score()
-            self.correct_answer = True
-        else:
-            self.correct_answer = False
         
+        
+        self.get_model_results()
+        self.model_answer.lower()
+        print(f"------------------Model answer: {self.model_answer}---------------------")
         if self.model_answer == self.correct_answer:
             self.update_model_score()
             self.model_correct_answer = True
         else:
             self.model_correct_answer = False
+        
+        print("-------------end of function------------------------")
     
     def determine_winner(self):
         """
@@ -132,7 +141,7 @@ class GameModel:
         """
         if self.model_score > self.score:
             return "model"
-        elif self.model.score < self.score:
+        elif self.model_score < self.score:
             return "user"
         else:
             return "tie"
@@ -282,18 +291,20 @@ class GameView:
         answer character on the screen
         """
         answer_pos = None
+        if "Jim" not in self.images.keys():
+            # Create a copy of the characters list
+            temp_characters_list = list(self.model.characters)
 
-        # Create a copy of the characters list
-        temp_characters_list = list(self.model.characters)
+            # Remove the correct character from the list & randomly select 3 others
+            temp_characters_list.remove(self.model.current_answer)
+            print(f"{self.model.characters}")
+            print(f"Temp characters list: {temp_characters_list}")
+            other_characters = random.sample(temp_characters_list, 3)
+            # Append the current answer to the list & shuffle
+            other_characters.append(self.model.current_answer)
+        else: 
+            other_characters = list(self.model.characters)
 
-        # Remove the correct character from the list & randomly select 3 others
-        temp_characters_list.remove(self.model.current_answer)
-        print(f"{self.model.characters}")
-        print(f"Temp characters list: {temp_characters_list}")
-        other_characters = random.sample(temp_characters_list, 3)
-
-        # Append the current answer to the list & shuffle
-        other_characters.append(self.model.current_answer)
         other_characters = [character.lower() for character in other_characters]
         print(f"Correct Answer: {self.model.current_answer}, Characters: {other_characters}")
         print(self.images)
@@ -364,6 +375,8 @@ class GameView:
             self.render_text("Correct!", (400, 700), color=(193, 225, 193))
         else:
             self.render_text("Incorrect", (400, 700), color=(250, 160, 160))
+
+        pygame.display.flip()
             
 
     def render_text(self, text, position, color=(255, 255, 255)):
@@ -441,3 +454,20 @@ class GameController:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 self.model.check_answer(x, y, answer_pos)
+                # if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
+                #     self.model.correct_answer = True
+                #     self.model.check_answer()
+    
+    def handle_waiting(self, answer_pos):
+        waiting_for_click = True
+        while waiting_for_click:
+            # Handle events like quitting the game
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.model.active = False
+                    waiting_for_click = False  # Exit the loop if the user quits
+
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # If the user clicks, handle the click and stop waiting
+                    self.handle_answer_click(answer_pos)
+                    waiting_for_click = False  # Exit the loop after the click

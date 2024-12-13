@@ -112,12 +112,13 @@ while True:
     controller = GameController(model)
 
     view.draw_main_screen()
+    print("After main screen")
     waiting_for_click = True
     show = ""
     while waiting_for_click:
         # Handle events like quitting the game
         show = controller.handle_main_screen_click()
-        if show in ["The Office", "Friends", "Brooklyn 99"]:
+        if show in ["the-office", "friends", "brooklyn-99"]:
             waiting_for_click = False  # Exit the loop after the click
     # show = controller.handle_main_screen_click()
     data = None
@@ -137,11 +138,7 @@ while True:
         vectorizer = brooklyn_vectorizer
     else:
         print("Please enter a valid show")
-    print(data)
-    
-    # model.get_dataset(data)
-    # model.get_classifier(classifier, vectorizer)
-    # model.pick_quotes()
+  
     if data is not None and isinstance(data, pd.DataFrame):
         model.get_dataset(data)
         model.get_classifier(classifier, vectorizer)
@@ -151,21 +148,10 @@ while True:
         model.get_quote()
         model.get_model_results()
         view.draw_question_screen()
-        view.draw_characters()
-        waiting_for_click = True
-        while waiting_for_click:
-            # Handle events like quitting the game
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    model.active = False
-                    waiting_for_click = False  # Exit the loop if the user quits
-
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # If the user clicks, handle the click and stop waiting
-                    controller.handle_answer_click()
-                    waiting_for_click = False  # Exit the loop after the click
-        model.check_answer()
+        answer_pos = view.draw_characters()
+        controller.handle_waiting(answer_pos)
         view.draw_result_screen()
+        pygame.time.wait(3000)
         model.update_active()
     
     view.draw_final_screen()
