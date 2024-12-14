@@ -36,6 +36,7 @@ class GameModel:
         self.classifier = None
         self.vectorizer = None
         self.predictions = []
+        self.user_answer = ""
     
     def get_dataset(self, data):
         """
@@ -77,7 +78,7 @@ class GameModel:
         first_sentence = re.split(r'[.!?]', quote)[0].strip()
 
         self.current_quote = first_sentence
-        self.current_answer = character
+        self.current_answer = character.lower()
         self.questions_shown += 1
     
     def get_model_results(self):
@@ -87,9 +88,9 @@ class GameModel:
         quote = [self.current_quote]
         quote_vectorized = self.vectorizer.transform(quote)
         prediction = self.classifier.predict(quote_vectorized)
-        if isinstance(prediction, np.ndarray):  # If it's a NumPy array
+        if isinstance(prediction, np.ndarray):  
             prediction = [p.lower() for p in prediction]
-        elif isinstance(prediction, str):  # If it's a single string (unlikely for predict)
+        elif isinstance(prediction, str): 
             prediction = prediction.lower()
         self.model_answer = prediction
 
@@ -112,30 +113,6 @@ class GameModel:
 
     def check_answer(self, x, y, answer_pos):
         """
-        Given which character the user clicks on, 
-        """
-        # print("------------beginnging of function-----------------")
-        # if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
-        #     self.update_score()
-        #     self.correct_answer = True
-        # else:
-        #     self.correct_answer = False
-        # if self.correct_answer:
-        #     self.update_score()
-        
-        
-        # self.get_model_results()
-        # self.model_answer.lower()
-        # print(f"------------------Model answer: {self.model_answer}---------------------")
-        # if self.model_answer == self.correct_answer:
-        #     self.update_model_score()
-        #     self.model_correct_answer = True
-        # else:
-        #     self.model_correct_answer = False
-        
-        # print("-------------end of function------------------------")
-
-        """
         Handles user input to determine whether the selected character is correct.
         
         Args:
@@ -143,16 +120,11 @@ class GameModel:
             y (int): Y-coordinate of the mouse click.
             answer_pos (tuple): The position of the correct answer (top-left corner of the image).
         """
-        print("------------ Beginning of check_answer function -----------------")
 
         # Ensure `answer_pos` is valid
+        print("BEGINNING OF CHECK ANSWER_FUNCTION")
         if answer_pos is None:
             print("Error: `answer_pos` is None. Cannot determine if answer is correct.")
-            self.correct_answer = False
-            return
-
-        if not hasattr(self, "DEFAULT_HEAD_SIZE"):
-            print("Error: `DEFAULT_HEAD_SIZE` is not defined.")
             self.correct_answer = False
             return
 
@@ -168,21 +140,19 @@ class GameModel:
             print(f"User clicked at ({x}, {y}), which is not within the bounds of the correct character at {answer_pos}.")
             self.correct_answer = False
 
-        # Model answer comparison (case-insensitive)
-        self.model_answer = self.model_answer.lower()
-        self.current_answer = self.current_answer.lower()
+        print("AFTER CHECKING USER")
 
-        print(f"Model's answer: {self.model_answer}, Correct answer: {self.current_answer}")
+        model_answer_str = self.model_answer[0]
 
-        if self.model_answer == self.current_answer:
+        print(f"Model's answer: {model_answer_str}, Correct answer: {self.current_answer}")
+
+        if model_answer_str == self.current_answer:
             print("Model correctly identified the answer.")
             self.update_model_score()
             self.model_correct_answer = True
         else:
             print("Model failed to identify the correct answer.")
             self.model_correct_answer = False
-
-        print("------------- End of check_answer function ------------------------")
 
     
     def determine_winner(self):
@@ -280,6 +250,7 @@ class GameView:
             images: a dict where the character name maps to their loaded in image
         """
 
+        print(f"Character list: {self.model.characters}")
         for character in self.model.characters:
             character_lower = character.lower()
             file_path = os.path.join("images", folder, character_lower + ".png")
@@ -294,7 +265,7 @@ class GameView:
                 image = pygame.transform.scale(image, DEFAULT_HEAD_SIZE)
                 # Store using `character_lower` as key
                 self.images[character_lower] = image
-                print(f"Loaded image for {character} from {file_path}")
+                # print(f"Loaded image for {character} from {file_path}")
             except Exception as e:
                 print(f"Error loading image for {character}: {e}")
         
@@ -332,14 +303,12 @@ class GameView:
         answer character on the screen
         """
         answer_pos = None
-        if "Jim" not in self.images.keys():
+        if "jim" not in self.images.keys():
             # Create a copy of the characters list
             temp_characters_list = list(self.model.characters)
 
             # Remove the correct character from the list & randomly select 3 others
             temp_characters_list.remove(self.model.current_answer)
-            print(f"{self.model.characters}")
-            print(f"Temp characters list: {temp_characters_list}")
             other_characters = random.sample(temp_characters_list, 3)
             # Append the current answer to the list & shuffle
             other_characters.append(self.model.current_answer)
@@ -348,7 +317,6 @@ class GameView:
 
         other_characters = [character.lower() for character in other_characters]
         print(f"Correct Answer: {self.model.current_answer}, Characters: {other_characters}")
-        print(self.images)
         random.shuffle(other_characters)
 
         # Assign positions to the characters
@@ -387,12 +355,14 @@ class GameView:
 
         self.render_text(f"Quote: {self.model.current_quote}", (50, 150))
 
-        self.render_text("Model's Guess:", (50, 200))
+        # self.render_text("Model's Guess:", (50, 200))
 
-        self.render_text("Your Guess:", (FRAME_WIDTH - 300, 200))
+        # self.render_text("Your Guess:", (FRAME_WIDTH - 300, 200))
 
         self.render_text(f"Your Score: {self.model.score}/7", (FRAME_WIDTH - 300, 250))
         self.render_text(f"Model's Score: {self.model.model_score}/7", (50, 250))
+        self.render_text(f"Question: {self.model.questions_shown}/7", (FRAME_WIDTH - 300, 50))
+
 
         if self.model.correct_answer:
             self.render_text("Correct!", (FRAME_WIDTH - 400, 700), color=(193, 225, 193))
@@ -457,6 +427,7 @@ class GameController:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.model.active = False
+                pygame.quit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 # selected_show = ""
@@ -483,25 +454,9 @@ class GameController:
                 if event.type == pygame.QUIT:
                     self.model.active = False
                     waiting_for_click = False
+                    pygame.quit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     x, y = event.pos
                     self.model.check_answer(x, y, answer_pos)
                     waiting_for_click = False
-                    # if answer_pos[0] <= x <= answer_pos[0] + DEFAULT_HEAD_SIZE[0] and answer_pos[1] <= y <= answer_pos[1] + DEFAULT_HEAD_SIZE[1]:
-                    #     self.model.correct_answer = True
-                    #     self.model.check_answer()
-    
-    # def handle_waiting(self, answer_pos):
-    #     waiting_for_click = True
-    #     while waiting_for_click:
-    #         # Handle events like quitting the game
-    #         for event in pygame.event.get():
-    #             if event.type == pygame.QUIT:
-    #                 self.model.active = False
-    #                 waiting_for_click = False  # Exit the loop if the user quits
 
-    #             elif event.type == pygame.MOUSEBUTTONDOWN:
-    #                 x, y = event.pos
-    #                 # If the user clicks, handle the click and stop waiting
-    #                 self.handle_answer_click(x, y)
-    #                 waiting_for_click = False  # Exit the loop after the click
