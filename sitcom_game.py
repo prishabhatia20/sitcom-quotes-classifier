@@ -51,7 +51,9 @@ class GameModel:
             raise ValueError("Invalid dataset provided. Please pass a valid Pandas DataFrame.")
     
         self.data = data
-        self.characters = self.data['character'].unique() 
+        # self.characters = self.data['character'].unique() 
+        # self.characters.lower()
+        self.characters = [character.lower() for character in self.data['character'].unique()]
     
     def get_classifier(self, classifier, vectorizer):
         self.classifier = classifier
@@ -303,17 +305,20 @@ class GameView:
         answer character on the screen
         """
         answer_pos = None
-        if "jim" not in self.images.keys():
-            # Create a copy of the characters list
-            temp_characters_list = list(self.model.characters)
 
-            # Remove the correct character from the list & randomly select 3 others
-            temp_characters_list.remove(self.model.current_answer)
-            other_characters = random.sample(temp_characters_list, 3)
-            # Append the current answer to the list & shuffle
-            other_characters.append(self.model.current_answer)
-        else: 
-            other_characters = list(self.model.characters)
+        # Create a copy of the characters list
+        temp_characters_list = list(self.model.characters)
+        print(f"Current Answer: {self.model.current_answer}")
+        print(f"Characters List: {self.model.characters}")
+        print(f"Temp characters list: {temp_characters_list}")
+
+        # Remove the correct character from the list & randomly select 3 others
+        temp_characters_list.remove(self.model.current_answer)
+        other_characters = random.sample(temp_characters_list, 3)
+        # Append the current answer to the list & shuffle
+        other_characters.append(self.model.current_answer)
+        # else: 
+        #     other_characters = list(self.model.characters)
 
         other_characters = [character.lower() for character in other_characters]
         print(f"Correct Answer: {self.model.current_answer}, Characters: {other_characters}")
