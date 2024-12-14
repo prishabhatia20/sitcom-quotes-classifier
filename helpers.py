@@ -51,7 +51,7 @@ def get_class_weights(labels, num_classes=NUM_CLASSES):
     class_weights = {i: total / (num_classes * class_counts[i]) for i in range(num_classes) if class_counts[i] > 0}
     return class_weights
 
-def split_and_preprocess_data(data, data_X, data_y, tokenizer=None, train_ratio=0.8, num_words=NUM_WORDS, maxlen=MAX_LEN):
+def split_and_preprocess_data(data, data_X, data_y, tokenizer=None, train_ratio=0.75, num_words=NUM_WORDS, maxlen=MAX_LEN):
     # from sklearn.model_selection import train_test_split
 
     # train_data, test_data = train_test_split(data, train_size=train_ratio, stratify=data['character'])
