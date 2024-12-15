@@ -8,7 +8,7 @@ import random
 from constants import FRAME_WIDTH, FRAME_HEIGHT
 
 DEFAULT_IMAGE_SIZE = (500, 250)
-DEFAULT_HEAD_SIZE = (400, 400)
+DEFAULT_HEAD_SIZE = (430, 400)
 
 screen = pygame.display.set_mode((FRAME_WIDTH, FRAME_HEIGHT))
 clock = pygame.time.Clock()
