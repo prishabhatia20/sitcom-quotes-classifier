@@ -409,7 +409,8 @@ class GameView:
         else:
             self.world.blit(self.win_image, (0, 0))
         
-        self.render_text(f"Your Score: {self.model.score}/7", (FRAME_WIDTH // 2, 250))
+        self.render_text(f"Your Score: {self.model.score}/7", (1000, 100))
+        self.render_text(f"Model Score: {self.model.model_score}/7", (200, 100))
         pygame.display.flip()
 
 
