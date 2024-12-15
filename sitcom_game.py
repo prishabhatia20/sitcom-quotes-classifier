@@ -311,6 +311,7 @@ class GameView:
         print(f"Current Answer: {self.model.current_answer}")
         print(f"Characters List: {self.model.characters}")
         print(f"Temp characters list: {temp_characters_list}")
+        print(f"Images: {self.images}")
 
         # Remove the correct character from the list & randomly select 3 others
         temp_characters_list.remove(self.model.current_answer)
@@ -376,7 +377,7 @@ class GameView:
         
 
         if self.model.model_correct_answer:
-            self.render_text("Correct!", (400, 700), color=(193, 225, 193))
+            self.render_text("Correct!", (400, 700), color=(193, 255, 193))
         else:
             self.render_text("Incorrect", (400, 700), color=(250, 160, 160))
 
