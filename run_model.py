@@ -55,8 +55,8 @@ def run_model(data):
     model.fit(X_train_vectorized, y_train)
     y_pred = model.predict(X_test_vectorized)
 
-    # print("Accuracy:", accuracy_score(y_test, y_pred))
-    # print("Classification Report:\n", classification_report(y_test, y_pred))
+    print("Accuracy:", accuracy_score(y_test, y_pred))
+    print("Classification Report:\n", classification_report(y_test, y_pred))
 
     return model, vectorizer
 

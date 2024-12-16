@@ -8,7 +8,7 @@ import random
 from constants import FRAME_WIDTH, FRAME_HEIGHT
 
 DEFAULT_IMAGE_SIZE = (500, 250)
-DEFAULT_HEAD_SIZE = (430, 400)
+DEFAULT_HEAD_SIZE = (400, 350)
 
 screen = pygame.display.set_mode((FRAME_WIDTH, FRAME_HEIGHT))
 clock = pygame.time.Clock()
@@ -285,19 +285,74 @@ class GameView:
 
         pygame.display.flip()
 
+
     def draw_question_screen(self):
         """
         Draw the screen for displaying a question and input.
         """
         self.world.blit(self.empty_background, (0, 0))
 
-        # Quote
-        self.render_text(f"Quote: {self.model.current_quote}", (50, 150))
+        # Title for the quote
+        self.render_text("Quote:", (50, 120), font_size=50)
 
-        self.render_text(f"Score: {self.model.score}", (50, 50))
-        self.render_text(f"Question: {self.model.questions_shown}/7", (FRAME_WIDTH - 300, 50))
+        # Quote wrapping logic
+        quote = self.model.current_quote
+        wrapped_lines = self.wrap_text(quote, max_width=FRAME_WIDTH - 200)
+
+        # Render each line of the quote below the title
+        y_offset = 180
+        for line in wrapped_lines:
+            self.render_text(line, (75, y_offset), font_size=50)
+            y_offset += 40  # Move down for the next line
+
+        # Score and question count
+        self.render_text(f"Score: {self.model.score}", (50, 50), font_size=40)
+        self.render_text(f"Question: {self.model.questions_shown}/7", (FRAME_WIDTH - 300, 50), font_size=40)
 
         pygame.display.flip()
+
+    def wrap_text(self, text, max_width):
+        """
+        Wrap text into multiple lines to fit within a specified width.
+
+        Args:
+            text (str): The text to wrap.
+            max_width (int): The maximum width of a line.
+
+        Returns:
+            list: A list of strings, each representing a line of wrapped text.
+        """
+        words = text.split()
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = f"{current_line} {word}".strip()
+            # Check the width of the line if this word is added
+            if self.text_width(test_line) <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word
+
+        # Append the last line
+        if current_line:
+            lines.append(current_line)
+
+        return lines
+
+    def text_width(self, text):
+        """
+        Measure the width of the given text.
+
+        Args:
+            text (str): The text to measure.
+
+        Returns:
+            int: The width of the text in pixels.
+        """
+        # font = pygame.font.Font(None, 36)  # Match the font used in `render_text`
+        return self.font.size(text)[0]
     
     def draw_characters(self):
         """
@@ -319,12 +374,13 @@ class GameView:
 
         # Assign positions to the characters
         self.model.characters_dict = {
-            other_characters[0]: (200, 200),
-            other_characters[1]: (900, 200),
+            other_characters[0]: (200, 250),
+            other_characters[1]: (900, 250),
             other_characters[2]: (900, 600),
             other_characters[3]: (200, 600),
         }
 
+        # Display character images
         for character in other_characters:
             character_lower = character.lower()
             image = self.images.get(character_lower)
@@ -335,6 +391,8 @@ class GameView:
 
             self.world.blit(image, self.model.characters_dict[character])
 
+        # Add instructions for the user
+        self.render_text("Select the correct character!", (FRAME_WIDTH // 2 - 200, 50), font_size=40)
 
         pygame.display.flip()
 
@@ -343,37 +401,47 @@ class GameView:
         """
         Draw the screen showing whether the answer was correct or not
         """
+
         self.world.blit(self.empty_background, (0, 0))
 
+        # Display the quote
+        self.render_text("Quote:", (50, 120), font_size=40)
+        wrapped_lines = self.wrap_text(self.model.current_quote, max_width=FRAME_WIDTH - 200)
+        y_offset = 180
+        for line in wrapped_lines:
+            self.render_text(line, (75, y_offset), font_size=30)
+            y_offset += 40
 
-        self.render_text(f"Quote: {self.model.current_quote}", (50, 150))
+        # Scores
+        self.render_text(f"Your Score: {self.model.score}/7", (FRAME_WIDTH - 350, 250), font_size=40)
+        self.render_text(f"Model's Score: {self.model.model_score}/7", (50, 250), font_size=40)
+        self.render_text(f"Question: {self.model.questions_shown}/7", (FRAME_WIDTH - 300, 50), font_size=40)
 
-        self.render_text(f"Your Score: {self.model.score}/7", (FRAME_WIDTH - 300, 250))
-        self.render_text(f"Model's Score: {self.model.model_score}/7", (50, 250))
-        self.render_text(f"Question: {self.model.questions_shown}/7", (FRAME_WIDTH - 300, 50))
+        # Display character choices
+        self.world.blit(self.images.get(self.model.user_answer), (900, 500))
+        self.world.blit(self.images.get(self.model.model_answer), (150, 500))
 
-    
-
-        self.world.blit(self.images.get(self.model.user_answer), (1000, 500))
-        self.world.blit(self.images.get(self.model.model_answer), (200, 500))
+        # Correctness feedback
+        self.render_text("You:", (1050, 450), font_size=40)
         if self.model.correct_answer:
-            self.render_text("Correct!", (FRAME_WIDTH - 400, 700), color=(193, 225, 193))
+            self.render_text("Correct!", (1050, 920), color=(193, 255, 193), font_size=40)
         else:
-            self.render_text("Incorrect", (FRAME_WIDTH - 400, 700), color=(250, 160, 160))
-        
+            self.render_text("Incorrect", (1050, 920), color=(250, 160, 160), font_size=40)
 
+        self.render_text("Model:", (250, 450), font_size=40)
         if self.model.model_correct_answer:
-            self.render_text("Correct!", (400, 700), color=(193, 255, 193))
+            self.render_text("Correct!", (250, 920), color=(193, 255, 193), font_size=40)
         else:
-            self.render_text("Incorrect", (400, 700), color=(250, 160, 160))
-        
+            self.render_text("Incorrect", (250, 920), color=(250, 160, 160), font_size=40)
+
+        # Show the correct answer if needed
         if not (self.model.model_correct_answer or self.model.correct_answer):
-            self.render_text(f"Correct Answer: {self.model.current_answer.title()}", (500, 900))
+            self.render_text(f"Correct Answer: {self.model.current_answer.title()}", (500, 950), font_size=35)
 
         pygame.display.flip()
-            
+                
 
-    def render_text(self, text, position, color=(255, 255, 255)):
+    def render_text(self, text, position, color=(255, 255, 255), font_size=50):
         """
         Render any text on the screen
 
@@ -382,7 +450,9 @@ class GameView:
             position: a tuple representing where the text should be rendered
             color: a tuple determining the text's color (defaults to white)
         """
-        rendered_text = self.font.render(text, True, color)
+
+        font = pygame.font.Font(None, font_size)  # Create a font with the specified size
+        rendered_text = font.render(text, True, color)
         self.world.blit(rendered_text, position)
 
     def draw_final_screen(self):
