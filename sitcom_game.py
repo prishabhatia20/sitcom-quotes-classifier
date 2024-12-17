@@ -2,7 +2,6 @@ import pygame
 import re
 import numpy as np
 import pandas as pd
-# from sklearn.feature_extraction.text import CountVectorizer
 import os
 import random
 from constants import FRAME_WIDTH, FRAME_HEIGHT
@@ -52,8 +51,7 @@ class GameModel:
             raise ValueError("Invalid dataset provided. Please pass a valid Pandas DataFrame.")
     
         self.data = data
-        # self.characters = self.data['character'].unique() 
-        # self.characters.lower()
+
         self.characters = [character.lower() for character in self.data['character'].unique()]
     
     def get_classifier(self, classifier, vectorizer):
@@ -65,8 +63,14 @@ class GameModel:
         From the given dataset, pick 7 quotes to test the user on
         """
         rows, _ = self.data.shape
-        for _ in range(self.total_questions):
-            self.quote_indices.append(random.randint(0, rows))
+        data_added = False
+        while not data_added:
+            quote_index = random.randint(0, rows)
+            if quote_index not in self.quote_indices:
+                self.quote_indices.append(quote_index)
+            if len(self.quote_indices) == self.total_questions:
+                data_added = True
+
         
     def get_quote(self):
         """
@@ -91,12 +95,6 @@ class GameModel:
         quote = [self.current_quote]
         quote_vectorized = self.vectorizer.transform(quote)
         prediction = self.classifier.predict(quote_vectorized)
-        
-        # if isinstance(prediction, np.ndarray):  
-        #     prediction = [p.lower() for p in prediction]
-        # elif isinstance(prediction, str): 
-        #     prediction = prediction.lower()
-        # self.model_answer = prediction
 
         if isinstance(prediction, np.ndarray):  
             if len(prediction) > 0: 
@@ -123,6 +121,9 @@ class GameModel:
             self.active = False
 
     def update_model_score(self):
+        """
+        Update the model's score
+        """
         self.model_score += 1
 
     def check_answer(self, x, y):
@@ -149,15 +150,12 @@ class GameModel:
             self.correct_answer = False
 
 
-
-
         if self.model_answer == self.current_answer:
             self.update_model_score()
             self.model_correct_answer = True
         else:
             self.model_correct_answer = False
 
-        print(f"------------User Answer: {self.user_answer}, Model Answer: {self.model_answer}, Correct Answer: {self.correct_answer}---------------")
     
     def determine_winner(self):
         """
@@ -303,7 +301,7 @@ class GameView:
         y_offset = 180
         for line in wrapped_lines:
             self.render_text(line, (75, y_offset), font_size=50)
-            y_offset += 40  # Move down for the next line
+            y_offset += 40 
 
         # Score and question count
         self.render_text(f"Score: {self.model.score}", (50, 50), font_size=40)
@@ -351,7 +349,6 @@ class GameView:
         Returns:
             int: The width of the text in pixels.
         """
-        # font = pygame.font.Font(None, 36)  # Match the font used in `render_text`
         return self.font.size(text)[0]
     
     def draw_characters(self):
@@ -374,10 +371,10 @@ class GameView:
 
         # Assign positions to the characters
         self.model.characters_dict = {
-            other_characters[0]: (200, 250),
-            other_characters[1]: (900, 250),
-            other_characters[2]: (900, 600),
-            other_characters[3]: (200, 600),
+            other_characters[0]: (200, 300),
+            other_characters[1]: (900, 300),
+            other_characters[2]: (900, 650),
+            other_characters[3]: (200, 650),
         }
 
         # Display character images
@@ -451,7 +448,7 @@ class GameView:
             color: a tuple determining the text's color (defaults to white)
         """
 
-        font = pygame.font.Font(None, font_size)  # Create a font with the specified size
+        font = pygame.font.Font(None, font_size) 
         rendered_text = font.render(text, True, color)
         self.world.blit(rendered_text, position)
 

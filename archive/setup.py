@@ -246,44 +246,44 @@ sns.heatmap(brooklyn_cm, annot=True, fmt="d", cbar=False)
 plt.show()
 
 
-# while True:
-#     pygame.init()
+while True:
+    pygame.init()
 
-#     model = GameModel()
-#     view = GameView(model)
-#     controller = GameController(model)
+    model = GameModel()
+    view = GameView(model)
+    controller = GameController(model)
 
-#     view.draw_main_screen()
-#     show = controller.handle_main_screen_click()
-#     data = None
-#     classifier = None
-#     if show == "The Office":
-#         data = office_data_game
-#         classifier = office_model
-#     elif show == "Friends":
-#         data = friends_data_game
-#         classifier = friends_model
-#     elif show == "Brooklyn 99":
-#         data = brooklyn_data_game
-#         classifier = brooklyn_model
-#     else:
-#         print("Please enter a valid show")
+    view.draw_main_screen()
+    show = controller.handle_main_screen_click()
+    data = None
+    classifier = None
+    if show == "The Office":
+        data = office_data_game
+        classifier = office_model
+    elif show == "Friends":
+        data = friends_data_game
+        classifier = friends_model
+    elif show == "Brooklyn 99":
+        data = brooklyn_data_game
+        classifier = brooklyn_model
+    else:
+        print("Please enter a valid show")
     
-#     model.get_dataset(data)
-#     model.get_classifier(classifier)
-#     model.pick_quotes
+    model.get_dataset(data)
+    model.get_classifier(classifier)
+    model.pick_quotes
 
 
-#     while model.active:
-#         model.get_quote()
-#         model.get_model_result()
-#         view.draw_question_screen()
-#         pygame.time.wait(10000)
-#         view.draw_result_screen()
-#         model.update_active()
+    while model.active:
+        model.get_quote()
+        model.get_model_result()
+        view.draw_question_screen()
+        pygame.time.wait(10000)
+        view.draw_result_screen()
+        model.update_active()
     
-#     view.draw_results_screen()
-#     pygame.time.wait(5000)
+    view.draw_results_screen()
+    pygame.time.wait(5000)
 
 
 

@@ -10,14 +10,13 @@ def filter_data(data, accuracy_criteria):
 
     
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.7, random_state=42)
 
     data['quote'] = data['quote'].str.strip().str.lower()
     X_test = X_test.str.strip().str.lower()
 
     vectorizer = CountVectorizer()
     X_train_vectorized = vectorizer.fit_transform(X_train)
-    # X_test_vectorized = vectorizer.transform(X_test)
 
 
     print(set(X_test).difference(data['quote']))
@@ -34,8 +33,7 @@ def filter_data(data, accuracy_criteria):
     for (probs, quote) in zip(y_pred, data['quote']):
         if max(probs) < accuracy_criteria:
             quotes_to_remove.append(quote)
-        # else:
-        #     print(probs, quote)
+
 
 
 
