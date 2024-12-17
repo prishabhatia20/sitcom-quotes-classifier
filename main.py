@@ -112,15 +112,14 @@ while True:
     controller = GameController(model)
 
     view.draw_main_screen()
-    print("After main screen")
     waiting_for_click = True
     show = ""
     while waiting_for_click:
         # Handle events like quitting the game
         show = controller.handle_main_screen_click()
         if show in ["the-office", "friends", "brooklyn-99"]:
-            waiting_for_click = False  # Exit the loop after the click
-    # show = controller.handle_main_screen_click()
+            waiting_for_click = False  
+
     data = None
     classifier = None
     vectorizer = None
@@ -148,7 +147,6 @@ while True:
         model.get_quote()
         model.get_model_results()
         view.draw_question_screen()
-        # answer_pos = view.draw_characters()
         view.draw_characters()
         controller.handle_answer_click()
         view.draw_result_screen()
