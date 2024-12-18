@@ -10,45 +10,56 @@ import helpers
 
 ######################### THE OFFICE #########################
 
+# Load both datasets
 office_monologue = pd.read_csv("datasets/talking_head.csv")
 office_response = pd.read_csv("datasets/parent_reply.csv.zip", compression='zip')
 
+# Drop unnecessary columns
 office_monologue.drop(['quote_id'], axis=1, inplace=True)
 office_response.drop(['parent_id', 'parent'], axis=1, inplace=True)
 office_response.rename(columns={'reply': 'quote'}, inplace=True)
 office_data = pd.concat([office_monologue, office_response]).reset_index(drop=True)
 
 
+# Get filtered data
 office_data_filtered = run_model.filter_data(office_data, ACCURACY_CRITERIA)
 
+# Split data into training data & game data (unseen)
 office_data_game, office_data_training = split_game_data(office_data_filtered)
 
 
+# Train the model
 office_model, office_vectorizer = run_model.run_model(office_data_training)
 
 
 ######################### FRIENDS #########################
 
-# Loading Friends dataset
+# Load Friends dataset
 
 friends_data = pd.read_csv("datasets/friends_quotes.csv.zip", compression='zip')
+
+# Drop unnecessary columns
 friends_data.drop(['episode_number', 'episode_title', 'quote_order', 'season'], axis=1, inplace=True)
+
+# Replace column names
 friends_data.rename(columns={'author': 'character'}, inplace=True)
 friends_data['character'] = friends_data['character'].str.title().str.strip()
 friends_characters = ["Rachel", "Phoebe", "Monica", "Joey", "Chandler", "Ross"]
 friends_data = friends_data[friends_data['character'].isin(friends_characters)]
 
-print(friends_data['character'].unique())
 
-
+# Get filtered data
 friends_data_filtered = run_model.filter_data(friends_data, ACCURACY_CRITERIA)
+
+# Split data into training data & game data (unseen)
 friends_data_game, friends_data_training = split_game_data(friends_data_filtered)
 
+# Train the model
 friends_model, friends_vectorizer = run_model.run_model(friends_data_training)
 
 ######################### BROOKLYN 99 #########################
 
-# Loading Brooklyn 99 data
+# Load Brooklyn 99 data
 
 brooklyn_data = pd.read_csv("datasets/Brooklyn99_Season1-4_Dataset.csv")
 brooklyn_data.rename(columns={'name': 'character', 'line': 'quote'}, inplace=True)
@@ -73,6 +84,7 @@ brooklyn_data = pd.concat([
     split_data
 ], ignore_index=True)
 
+# Create dictionary of typos
 typos = {"Charles": ["Boyle", "Kid Charles", "Charles On The Pole"],
          "Holt": ["Captain Holt", "Young Holt"],
          "Amy": ["Santiago", "Any"],
@@ -93,6 +105,7 @@ typos = {"Charles": ["Boyle", "Kid Charles", "Charles On The Pole"],
          "Gina": ["Gina Moves The Gun To Scratch Her Nose", "Gina Flossing Her Teeth Says"], 
          "Scully": ["Scully Panicked"]}
 
+# Replace typos
 brooklyn_data['character'] = brooklyn_data['character'].apply(lambda x: helpers.clean_character_names(x, typos))
 brooklyn_characters = ["Jake", "Rosa", "Gina", "Amy", "Holt", "Charles", "Scully", "Hitchcock", "Terry"]
 
@@ -105,24 +118,31 @@ brooklyn_data_game, brooklyn_data_training = split_game_data(brooklyn_data_filte
 brooklyn_model, brooklyn_vectorizer = run_model.run_model(brooklyn_data_training)
 
 while True:
+    # Initialize the pygame window
     pygame.init()
 
+    # Create instances of GameModel, GameView, and GameController
     model = GameModel()
     view = GameView(model)
     controller = GameController(model)
 
+    # Draw the main screen
     view.draw_main_screen()
     waiting_for_click = True
     show = ""
     while waiting_for_click:
         # Handle events like quitting the game
         show = controller.handle_main_screen_click()
+
+        # If the user clicks on a show, exit the loop
         if show in ["the-office", "friends", "brooklyn-99"]:
             waiting_for_click = False  
 
     data = None
     classifier = None
     vectorizer = None
+
+    # Handle data, classifier, and vectorizer assignment
     if show == "the-office":
         data = office_data_game
         classifier = office_model
@@ -138,12 +158,17 @@ while True:
     else:
         print("Please enter a valid show")
   
+    # Pass data, classifier, and vectorizer to GameModel
     if data is not None and isinstance(data, pd.DataFrame):
         model.get_dataset(data)
-        model.get_classifier(classifier, vectorizer)
+        model.set_classifier(classifier, vectorizer)
+
+        # Pick 7 quotes to test user on
         model.pick_quotes()
         view.load_character_images(show)
     while model.active:
+
+        # Main game loop events
         model.get_quote()
         model.get_model_results()
         view.draw_question_screen()
